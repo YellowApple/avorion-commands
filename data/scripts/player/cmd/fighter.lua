@@ -1,0 +1,114 @@
+package.path = package.path .. ";data/scripts/lib/?.lua"
+
+include ("galaxy")
+include ("randomext")
+include ("common")
+include ("weapons")
+include ("rarities")
+include ("materials")
+
+if onServer() then
+	function initialize(action, ...)
+		local flag, msg = false, ""
+
+		player = Player()
+
+		if action == "add" then
+			flag, msg = addFighter(player, ...)
+		elseif action == "help" or action == nil then
+			flag,msg = true, "Adds a fighter to the players hangar. Usage:\n/fighter add <weapon> [rarity] [material] [tech]\n"
+		else
+			flag, msg = false, string.format("Unknown action: %s", action)
+		end
+
+		player:sendChatMessage("Fighter", 0, msg)
+		terminate()
+	end
+
+	function addFighter(player, weapontype, rarity, material, tech, amount)
+		local err
+		local ship = Entity(player.craftIndex)
+
+		if not ship:hasComponent(ComponentType.Hangar) then
+			return false, "Ship must have a hangar"
+		end	
+
+		local weapon_id = getWeapon(weapontype)
+		if weapon_id==nil then 
+			return false, err
+		end
+
+		local rarity_ent = getRarity(rarity)
+		if rarity_ent==nil then
+			return false, err
+		end
+
+		local material_ent = getMaterial(material)
+		if not material then
+			return false, err
+		end
+		
+		local tech = math.max(1, tonumber(tech) or 6)
+		local dps = Balancing_TechWeaponDPS(tech)
+		
+		local fighter = GenerateFighterTemplate(random():createSeed(), weapon_id, dps, tech, rarity_ent, material_ent)
+		
+		local hangar = Hangar(ship.index);
+		
+		-- check if there is enough space in ship
+		if hangar.freeSpace < fighter.volume then
+			retstr = "Hangar: " .. str(hangar.freeSpace) .. ", Fighter: " .. str(fighter.volume)
+			return false, "You don't have enough space in your hangar.\n" .. retstr
+		end
+		
+		-- find a squad that has space for a fighter
+		local squads = {hangar:getSquads()}
+
+		local squad
+		for _, i in pairs(squads) do
+			local fighters = hangar:getSquadFighters(i)
+			local space = hangar:getSquadMaxFighters(i)
+
+			local free = space - fighters
+
+			if free > 0 then
+				squad = i
+				break
+			end
+		end
+
+		if squad == nil then
+			return false, "There is no free squad to place the fighter in."
+		end
+
+		hangar:addFighter(squad, fighter)
+
+		return true, "Fighter added to inventory"
+	end
+
+	-- Returns available properties from a selected table.
+	function printAvailable(table)
+		local str = "Available:"
+		for _,item in ipairs(table) do
+			str = str .. "\n" .. item[3]
+		end
+		return true, str
+	end
+
+	-- Following four functions are almost the same; consider merging them.
+	-- Identifies type based on the specified table from a string or a number.
+	function getType(tbl, item, min)
+		local _item
+		if tonumber(item) then
+			_item = limit(tonumber(item), #tbl-min, min)
+		else
+			_item = findString(tbl, item)
+		end
+
+		if _item then
+			return _item
+		end
+
+		return nil, string.format("Could not identify type: %s", item)
+	end
+end
