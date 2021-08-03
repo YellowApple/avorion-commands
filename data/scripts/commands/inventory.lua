@@ -51,7 +51,7 @@ function addTurrets(faction, weapontype, rarity, material, tech, amount)
 		if rarity_ent then
 			local material_ent = getMaterial(material)
 			if material_ent then
-                amount = amount or 1
+				amount = amount or 1
 				if tonumber(amount) then
 					local tech = math.max(1, tonumber(tech) or 6)
 					local dps = Balancing_TechWeaponDPS(tech)
