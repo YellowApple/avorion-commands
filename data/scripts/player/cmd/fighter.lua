@@ -6,6 +6,7 @@ include ("common")
 include ("weapons")
 include ("rarities")
 include ("materials")
+local FighterGenerator = include ("fightergenerator")
 
 if onServer() then
 	function initialize(action, ...)
@@ -51,13 +52,13 @@ if onServer() then
 		local tech = math.max(1, tonumber(tech) or 6)
 		local dps = Balancing_TechWeaponDPS(tech)
 		
-		local fighter = GenerateFighterTemplate(random():createSeed(), weapon_id, dps, tech, rarity_ent, material_ent)
+		local fighter = FighterGenerator.generateFighter(random(), weapon_id, dps, tech, material_ent, rarity_ent, player.craftFaction)
 		
 		local hangar = Hangar(ship.index);
 		
 		-- check if there is enough space in ship
 		if hangar.freeSpace < fighter.volume then
-			retstr = "Hangar: " .. str(hangar.freeSpace) .. ", Fighter: " .. str(fighter.volume)
+			retstr = "Hangar: " .. tostring(hangar.freeSpace) .. ", Fighter: " .. tostring(fighter.volume)
 			return false, "You don't have enough space in your hangar.\n" .. retstr
 		end
 		
