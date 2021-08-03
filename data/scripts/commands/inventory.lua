@@ -79,7 +79,7 @@ function addUpgrades(faction, script, rarity, amount)
 	if upgrade_script then
 		local rarity_ent = getRarity(rarity)
 		if rarity_ent then
-            amount = amount or 1
+			amount = amount or 1
 			if tonumber(amount) then
 				local seed = random():createSeed()
 				local item = SystemUpgradeTemplate(upgrade_script, rarity_ent, seed)
